@@ -2,9 +2,8 @@ name: Update Google Scholar Stats
 
 on:
   schedule:
-    # Runs every Sunday at midnight UTC
     - cron: '0 0 * * 0'
-  workflow_dispatch: # Allow manual trigger
+  workflow_dispatch:
 
 jobs:
   update-stats:
@@ -18,39 +17,14 @@ jobs:
 
       - name: Fetch Google Scholar stats
         run: |
-          # Fetch the Google Scholar page
           SCHOLAR_URL="https://scholar.google.fr/citations?user=mrGL-KcAAAAJ&hl=en"
-
-          # Use curl to get the page content
           HTML=$(curl -s -L -A "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36" "$SCHOLAR_URL")
-
-          # Extract citations (total)
           CITATIONS=$(echo "$HTML" | grep -oP '(?<=<td class="gsc_rsb_std">)[0-9]+' | head -1)
-
-          # Extract h-index
           H_INDEX=$(echo "$HTML" | grep -oP '(?<=<td class="gsc_rsb_std">)[0-9]+' | sed -n '2p')
-
-          # Extract i10-index
           I10_INDEX=$(echo "$HTML" | grep -oP '(?<=<td class="gsc_rsb_std">)[0-9]+' | sed -n '3p')
-
-          # Get current date
           TODAY=$(date +%Y-%m-%d)
-
-          # Create JSON file with stats
-          cat > scholar-stats.json << 'EOFMARKER'
-{
-  "citations": "CITATIONS_PLACEHOLDER",
-  "hIndex": "HINDEX_PLACEHOLDER",
-  "i10Index": "I10INDEX_PLACEHOLDER",
-  "lastUpdated": "DATE_PLACEHOLDER"
-}
-EOFMARKER
-          # Replace placeholders with actual values
-          sed -i "s/CITATIONS_PLACEHOLDER/${CITATIONS:-144}/" scholar-stats.json
-          sed -i "s/HINDEX_PLACEHOLDER/${H_INDEX:-6}/" scholar-stats.json
-          sed -i "s/I10INDEX_PLACEHOLDER/${I10_INDEX:-5}/" scholar-stats.json
-          sed -i "s/DATE_PLACEHOLDER/$TODAY/" scholar-stats.json
-
+          echo "{\"citations\": \"${CITATIONS:-144}\", \"hIndex\": \"${H_INDEX:-6}\", \"i10Index\": \"${I10_INDEX:-5}\", \"lastUpdated\": \"$TODAY\"}" > scholar-stats.json
+          cat scholar-stats.json
           echo "Updated stats: Citations=$CITATIONS, h-index=$H_INDEX, i10-index=$I10_INDEX"
 
       - name: Commit and push if changed
