@@ -37,14 +37,19 @@ jobs:
           TODAY=$(date +%Y-%m-%d)
 
           # Create JSON file with stats
-          cat > scholar-stats.json << EOF
-          {
-            "citations": "${CITATIONS:-144}",
-            "hIndex": "${H_INDEX:-6}",
-            "i10Index": "${I10_INDEX:-5}",
-            "lastUpdated": "$TODAY"
-          }
-          EOF
+          cat > scholar-stats.json << 'EOFMARKER'
+{
+  "citations": "CITATIONS_PLACEHOLDER",
+  "hIndex": "HINDEX_PLACEHOLDER",
+  "i10Index": "I10INDEX_PLACEHOLDER",
+  "lastUpdated": "DATE_PLACEHOLDER"
+}
+EOFMARKER
+          # Replace placeholders with actual values
+          sed -i "s/CITATIONS_PLACEHOLDER/${CITATIONS:-144}/" scholar-stats.json
+          sed -i "s/HINDEX_PLACEHOLDER/${H_INDEX:-6}/" scholar-stats.json
+          sed -i "s/I10INDEX_PLACEHOLDER/${I10_INDEX:-5}/" scholar-stats.json
+          sed -i "s/DATE_PLACEHOLDER/$TODAY/" scholar-stats.json
 
           echo "Updated stats: Citations=$CITATIONS, h-index=$H_INDEX, i10-index=$I10_INDEX"
 
