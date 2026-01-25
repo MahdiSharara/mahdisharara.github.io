@@ -17,15 +17,53 @@ jobs:
 
       - name: Fetch Google Scholar stats
         run: |
-          SCHOLAR_URL="https://scholar.google.fr/citations?user=mrGL-KcAAAAJ&hl=en"
-          HTML=$(curl -s -L -A "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36" "$SCHOLAR_URL")
-          CITATIONS=$(echo "$HTML" | grep -oP '(?<=<td class="gsc_rsb_std">)[0-9]+' | head -1)
+          SCHOLAR_URL="https://scholar.google.com/citations?user=mrGL-KcAAAAJ&hl=en"
+
+          # Fetch with full browser headers
+          HTML=$(curl -s -L \
+            -H "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36" \
+            -H "Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8" \
+            -H "Accept-Language: en-US,en;q=0.5" \
+            "$SCHOLAR_URL")
+
+          # Debug: save HTML for inspection
+          echo "$HTML" > debug.html
+
+          # Try multiple extraction methods
+          # Method 1: From meta description (most reliable)
+          CITATIONS=$(echo "$HTML" | grep -oP 'Cited by \K[0-9]+' | head -1)
+
+          # Method 2: From table cells (fallback)
+          if [ -z "$CITATIONS" ]; then
+            CITATIONS=$(echo "$HTML" | grep -oP '(?<=<td class="gsc_rsb_std">)[0-9]+' | head -1)
+          fi
+
+          # Extract h-index and i10-index from table
           H_INDEX=$(echo "$HTML" | grep -oP '(?<=<td class="gsc_rsb_std">)[0-9]+' | sed -n '2p')
           I10_INDEX=$(echo "$HTML" | grep -oP '(?<=<td class="gsc_rsb_std">)[0-9]+' | sed -n '3p')
+
+          # If h-index not found, try alternate pattern
+          if [ -z "$H_INDEX" ]; then
+            H_INDEX=$(echo "$HTML" | grep -oP '(?<=<td class="gsc_rsb_std">)[0-9]+' | sed -n '4p')
+          fi
+          if [ -z "$I10_INDEX" ]; then
+            I10_INDEX=$(echo "$HTML" | grep -oP '(?<=<td class="gsc_rsb_std">)[0-9]+' | sed -n '5p')
+          fi
+
           TODAY=$(date +%Y-%m-%d)
-          echo "{\"citations\": \"${CITATIONS:-144}\", \"hIndex\": \"${H_INDEX:-6}\", \"i10Index\": \"${I10_INDEX:-5}\", \"lastUpdated\": \"$TODAY\"}" > scholar-stats.json
+
+          echo "Debug - Citations: '$CITATIONS', h-index: '$H_INDEX', i10-index: '$I10_INDEX'"
+
+          # Only update if we got valid citations
+          if [ -n "$CITATIONS" ] && [ "$CITATIONS" -gt 0 ] 2>/dev/null; then
+            echo "{\"citations\": \"${CITATIONS}\", \"hIndex\": \"${H_INDEX:-0}\", \"i10Index\": \"${I10_INDEX:-0}\", \"lastUpdated\": \"$TODAY\"}" > scholar-stats.json
+            echo "Successfully updated stats"
+          else
+            echo "Failed to fetch stats, keeping existing values"
+            exit 0
+          fi
+
           cat scholar-stats.json
-          echo "Updated stats: Citations=$CITATIONS, h-index=$H_INDEX, i10-index=$I10_INDEX"
 
       - name: Commit and push if changed
         run: |
