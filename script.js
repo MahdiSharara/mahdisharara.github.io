@@ -1,3 +1,23 @@
+// Load Google Scholar stats from JSON file
+async function loadScholarStats() {
+    try {
+        const response = await fetch('scholar-stats.json');
+        const data = await response.json();
+        document.getElementById('citations').textContent = data.citations;
+        document.getElementById('h-index').textContent = data.hIndex;
+        document.getElementById('i10-index').textContent = data.i10Index;
+    } catch (error) {
+        console.log('Could not load scholar stats:', error);
+        // Fallback values
+        document.getElementById('citations').textContent = '144';
+        document.getElementById('h-index').textContent = '6';
+        document.getElementById('i10-index').textContent = '5';
+    }
+}
+
+// Load stats when page loads
+document.addEventListener('DOMContentLoaded', loadScholarStats);
+
 // Mobile Navigation Toggle
 const hamburger = document.querySelector('.hamburger');
 const navMenu = document.querySelector('.nav-menu');

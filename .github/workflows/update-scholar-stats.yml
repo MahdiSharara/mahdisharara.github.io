@@ -1,0 +1,57 @@
+name: Update Google Scholar Stats
+
+on:
+  schedule:
+    # Runs every Sunday at midnight UTC
+    - cron: '0 0 * * 0'
+  workflow_dispatch: # Allow manual trigger
+
+jobs:
+  update-stats:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Fetch Google Scholar stats
+        run: |
+          # Fetch the Google Scholar page
+          SCHOLAR_URL="https://scholar.google.fr/citations?user=mrGL-KcAAAAJ&hl=en"
+
+          # Use curl to get the page content
+          HTML=$(curl -s -L -A "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36" "$SCHOLAR_URL")
+
+          # Extract citations (total)
+          CITATIONS=$(echo "$HTML" | grep -oP '(?<=<td class="gsc_rsb_std">)[0-9]+' | head -1)
+
+          # Extract h-index
+          H_INDEX=$(echo "$HTML" | grep -oP '(?<=<td class="gsc_rsb_std">)[0-9]+' | sed -n '2p')
+
+          # Extract i10-index
+          I10_INDEX=$(echo "$HTML" | grep -oP '(?<=<td class="gsc_rsb_std">)[0-9]+' | sed -n '3p')
+
+          # Get current date
+          TODAY=$(date +%Y-%m-%d)
+
+          # Create JSON file with stats
+          cat > scholar-stats.json << EOF
+          {
+            "citations": "${CITATIONS:-144}",
+            "hIndex": "${H_INDEX:-6}",
+            "i10Index": "${I10_INDEX:-5}",
+            "lastUpdated": "$TODAY"
+          }
+          EOF
+
+          echo "Updated stats: Citations=$CITATIONS, h-index=$H_INDEX, i10-index=$I10_INDEX"
+
+      - name: Commit and push if changed
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add scholar-stats.json
+          git diff --staged --quiet || git commit -m "Update Google Scholar stats"
+          git push
