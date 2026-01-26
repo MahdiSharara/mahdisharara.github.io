@@ -21,7 +21,7 @@ jobs:
           python-version: '3.11'
 
       - name: Install dependencies
-        run: pip install scholarly free-proxy
+        run: pip install scholarly "httpx<0.28.0"
 
       - name: Fetch Google Scholar stats
         timeout-minutes: 5
@@ -33,8 +33,12 @@ jobs:
 
           # Set up free proxy to avoid blocking
           pg = ProxyGenerator()
-          success = pg.FreeProxies()
-          scholarly.use_proxy(pg)
+          try:
+              success = pg.FreeProxies()
+              scholarly.use_proxy(pg)
+              print("Using free proxy")
+          except Exception as e:
+              print(f"Proxy setup failed: {e}, trying without proxy")
 
           try:
               print("Fetching author data...")
