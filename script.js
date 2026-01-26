@@ -1,3 +1,14 @@
+// Simple invisible hit counter (tracks visits silently)
+function trackVisit() {
+    const namespace = 'mahdisharara-github-io';
+    const key = 'visits';
+    fetch(`https://api.countapi.xyz/hit/${namespace}/${key}`)
+        .then(response => response.json())
+        .then(data => console.log('Visit tracked:', data.value))
+        .catch(err => console.log('Counter unavailable'));
+}
+trackVisit();
+
 // Load Google Scholar stats from JSON file
 async function loadScholarStats() {
     try {
