@@ -1,13 +1,11 @@
-// Simple invisible hit counter (tracks visits silently)
+// Simple invisible hit counter using visitor-badge (tracks visits silently)
 function trackVisit() {
-    const namespace = 'mahdisharara-github-io';
-    const key = 'visits';
-    fetch(`https://api.countapi.xyz/hit/${namespace}/${key}`)
-        .then(response => response.json())
-        .then(data => console.log('Visit tracked:', data.value))
-        .catch(err => console.log('Counter unavailable'));
+    const img = new Image();
+    img.src = 'https://visitor-badge.laobi.icu/badge?page_id=mahdisharara.github.io';
+    img.style.display = 'none';
+    document.body.appendChild(img);
 }
-trackVisit();
+document.addEventListener('DOMContentLoaded', trackVisit);
 
 // Load Google Scholar stats from JSON file
 async function loadScholarStats() {
