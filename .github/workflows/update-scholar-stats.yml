@@ -21,17 +21,23 @@ jobs:
           python-version: '3.11'
 
       - name: Install dependencies
-        run: pip install scholarly
+        run: pip install scholarly free-proxy
 
       - name: Fetch Google Scholar stats
+        timeout-minutes: 5
         run: |
           python << 'EOF'
           import json
           from datetime import date
-          from scholarly import scholarly
+          from scholarly import scholarly, ProxyGenerator
+
+          # Set up free proxy to avoid blocking
+          pg = ProxyGenerator()
+          success = pg.FreeProxies()
+          scholarly.use_proxy(pg)
 
           try:
-              # Search for the author by ID
+              print("Fetching author data...")
               author = scholarly.search_author_id('mrGL-KcAAAAJ')
               author = scholarly.fill(author, sections=['basics', 'indices'])
 
